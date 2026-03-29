@@ -86,17 +86,63 @@ if run_clicked:
             data = resp.json()
             sentiment = data.get("sentimentPercentage", {})
 
-            m1, m2, m3, m4 = st.columns(4)
-            m1.metric("Mentions", data.get("mentionCount", 0))
-            m2.metric("Positive %", sentiment.get("positive", 0))
-            m3.metric("Neutral %", sentiment.get("neutral", 0))
-            m4.metric("Negative %", sentiment.get("negative", 0))
+            st.metric("Mentions", data.get("mentionCount", 0))
+
+            st.subheader("Sentiment")
+            sentiment_df = pd.DataFrame(
+                [
+                    {"sentiment": "positive", "value": sentiment.get("positive", 0)},
+                    {"sentiment": "neutral", "value": sentiment.get("neutral", 0)},
+                    {"sentiment": "negative", "value": sentiment.get("negative", 0)},
+                ]
+            )
+
+            sentiment_chart = (
+                alt.Chart(sentiment_df)
+                .mark_arc()
+                .encode(
+                    theta=alt.Theta(field="value", type="quantitative"),
+                    color=alt.Color(
+                        "sentiment:N",
+                        scale=alt.Scale(
+                            domain=["positive", "neutral", "negative"],
+                            range=["#2e7d32", "#9e9e9e", "#c62828"],
+                        ),
+                        legend=alt.Legend(title="Sentiment"),
+                    ),
+                    tooltip=["sentiment:N", alt.Tooltip("value:Q", title="Percentage")],
+                )
+                .properties(height=320)
+            )
+            st.altair_chart(sentiment_chart, use_container_width=True)
 
             st.subheader("Top Keywords")
             top_keywords = data.get("topKeywords", [])
             if top_keywords:
                 kw_df = pd.DataFrame(top_keywords)
-                st.dataframe(kw_df, use_container_width=True)
+                if {"keyword", "count"}.issubset(kw_df.columns):
+                    kw_df = kw_df[kw_df["count"] > 0].copy()
+                    kw_df = kw_df.sort_values("count", ascending=False)
+                    if not kw_df.empty:
+                        kw_chart = (
+                            alt.Chart(kw_df)
+                            .mark_bar(cornerRadiusTopRight=4, cornerRadiusBottomRight=4)
+                            .encode(
+                                x=alt.X("count:Q", title="Mentions"),
+                                y=alt.Y("keyword:N", sort="-x", title="Keyword"),
+                                tooltip=[
+                                    alt.Tooltip("keyword:N", title="Keyword"),
+                                    alt.Tooltip("count:Q", title="Mentions"),
+                                ],
+                                color=alt.ColorValue("#2e7d32"),
+                            )
+                            .properties(height=420)
+                        )
+                        st.altair_chart(kw_chart, use_container_width=True)
+                    else:
+                        st.info("No keyword frequencies available for chart.")
+                else:
+                    st.info("Keyword data is missing expected fields.")
             else:
                 st.info("No keywords found for this filter.")
 
@@ -119,11 +165,12 @@ if run_clicked:
             if not examples:
                 st.info("No posts found for your keyword filters.")
             for post in examples:
+                content = (post.get("content", "") or "").replace("\\n", "\n")
                 st.markdown(
                     f"**[{post.get('platform', 'unknown')}] @{post.get('author', 'user')}** "
-                    f"({post.get('created_at', '')})  \\n"
-                    f"Sentiment: **{post.get('sentiment', 'neutral')}**  \\n"
-                    f"{post.get('content', '')}"
+                    f"({post.get('created_at', '')})  \n"
+                    f"Sentiment: **{post.get('sentiment', 'neutral')}**  \n"
+                    f"{content}"
                 )
                 st.divider()
 
