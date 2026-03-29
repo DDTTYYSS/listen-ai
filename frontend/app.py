@@ -13,8 +13,9 @@ GATEWAY_URL = os.getenv("GATEWAY_URL", "http://localhost:8000")
 if "token" not in st.session_state:
     st.session_state.token = None
 
-st.title("Listen AI Dashboard")
+st.title("ListenAI Dashboard")
 st.caption("Track sentiment, keywords, trends, and example posts by keyword filters.")
+st.text("Hello! 梁安哲")
 
 dashboard_tab, add_post_tab = st.tabs(["Dashboard", "Add Post"])
 

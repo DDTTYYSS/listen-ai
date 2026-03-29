@@ -1,4 +1,4 @@
-# Listen AI - Social Listening Platform
+# ListenAI - Social Listening Platform
 
 A lightweight multi-service social listening platform with:
 
