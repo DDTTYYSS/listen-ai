@@ -9,7 +9,8 @@ tasks:
       pids=$(lsof -t -nP -iTCP:$PORTS -sTCP:LISTEN 2>/dev/null | tr '\n' ' ')
       if [ -n "$pids" ]; then
         echo "Stopping processes on ports: $PORTS"
-        kill $pids
+        # Use external kill binary for better cross-shell compatibility.
+        /bin/kill $pids
       else
         echo "No listening processes found on ports: $PORTS"
       fi
